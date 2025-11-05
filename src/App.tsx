@@ -1,18 +1,43 @@
-import { useState } from "react";
-export default function App() {
-  const [token,setToken]=useState(""); const [wins,setWins]=useState(42); const [losses,setLosses]=useState(8);
-  const login=async()=>{const r=await fetch("http://localhost:8080/login",{method:"POST"});const d=await r.json();setToken(d.token);setWins(d.wins);setLosses(d.losses);}
-  const postBet=async(win:boolean)=>{await fetch("http://localhost:8080/betslip",{method:"POST",headers:{"Authorization":token,"Content-Type":"application/json"},body:JSON.stringify({games:"ManU vs Arsenal",result:win})});
-    const p=await fetch("http://localhost:8080/profile",{headers:{"Authorization":token}});const pp=await p.json();setWins(pp.wins);setLosses(pp.losses);}
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
+import Home from './Home';
+import Login from './Login';
+import Register from './Register';
+import Profile from './Profile';
+import PostBetslip from './PostBetslip';
+import Leaderboard from './Leaderboard';
+
+function App() {
+  // A real app would have a more sophisticated way to manage auth state
+  const token = localStorage.getItem('token');
+
   return (
-    <div style={{fontFamily:"Arial",textAlign:"center",marginTop:"10%"}}>
-      <h1>SureBetSlips</h1>
-      {!token?<button onClick={login} style={{padding:"15px 40px",fontSize:"20px"}}>LOGIN</button>:
-       <div>
-         <h2>Wins: {wins} | Losses: {losses}</h2>
-         <button onClick={()=>postBet(true)} style={{margin:"10px",padding:"12px 30px",background:"#4CAF50",color:"white",border:"none",borderRadius:"8px"}}>WIN</button>
-         <button onClick={()=>postBet(false)} style={{margin:"10px",padding:"12px 30px",background:"#f44336",color:"white",border:"none",borderRadius:"8px"}}>LOSS</button>
-       </div>}
-    </div>
+    <Router>
+      <div className="min-h-screen bg-gray-100 flex flex-col items-center py-8">
+        <nav className="mb-8 p-4 bg-white shadow-md rounded-lg flex space-x-4">
+          <Link to="/" className="text-blue-600 hover:text-blue-800">Home</Link> |
+          <Link to="/leaderboard" className="text-blue-600 hover:text-blue-800">Leaderboard</Link> |
+          <Link to="/register" className="text-blue-600 hover:text-blue-800">Register</Link>
+          {token ? (
+            <>
+              <Link to="/profile" className="text-blue-600 hover:text-blue-800">Profile</Link>
+              <Link to="/post-betslip" className="text-blue-600 hover:text-blue-800">Post Bet</Link>
+            </>
+          ) : <Link to="/login" className="text-blue-600 hover:text-blue-800">Login</Link>}
+        </nav>
+        <div className="w-full max-w-2xl bg-white p-8 rounded-lg shadow-md">
+          <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/post-betslip" element={<PostBetslip />} />
+        </Routes>
+      </div>
+      </div>
+    </Router>
   );
 }
+
+export default App;
