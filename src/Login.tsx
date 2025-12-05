@@ -1,22 +1,24 @@
 import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { login } from './authService';
+import { useAuth } from './AuthContext';
 
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
+  const auth = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setMessage('');
 
     try {
-      const data = await login(username, password);
-      localStorage.setItem('token', data.token);
-      setMessage('Login successful! You can now access your profile.');
-      // In a real app, you would redirect the user, e.g., window.location.href = '/profile';
+      // Trim username to remove leading/trailing whitespace
+      const data = await login(username.trim(), password);
+      await auth.login(data.token);
+      navigate('/');
     } catch (err: any) {
       setError(err.message || 'Failed to log in. Please check your credentials.');
     }
@@ -32,12 +34,28 @@ const Login = () => {
         </div>
         <div className="flex flex-col">
           <label className="mb-1 text-gray-700">Password:</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="p-2 border border-gray-300 rounded-md" />
+          <div className="relative">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="p-2 border border-gray-300 rounded-md w-full"
+            />
+            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 px-3 flex items-center text-sm text-gray-600">
+              {showPassword ? 'Hide' : 'Show'}
+            </button>
+          </div>
         </div>
         <button type="submit" className="w-full bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 transition-colors">Login</button>
       </form>
       {error && <p className="text-red-500 mt-4">{error}</p>}
-      {message && <p className="text-green-500 mt-4">{message}</p>}
+      <p className="mt-6 text-center text-sm text-gray-600">
+        Don't have an account?{' '}
+        <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500">
+          Register here
+        </Link>
+      </p>
     </div>
   );
 };

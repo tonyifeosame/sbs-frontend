@@ -1,52 +1,70 @@
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Home from './Home';
 import Login from './Login';
 import Register from './Register';
-import Profile from './Profile';
-import PostBetslip from './PostBetslip';
+import UserProfile from './UserProfile';
+import Profile from './Profile'; 
+import AccountSettings from './AccountSettings';
+import ProfileSettings from './ProfileSettings';
+import NotificationsSettings from './NotificationsSettings';
+import PrivacySettings from './PrivacySettings';
+import FeedSettings from './FeedSettings';
+import SecuritySettings from './SecuritySettings';
+import PunditToolsSettings from './PunditToolsSettings';
+import WalletSettings from './WalletSettings';
+import AIPersonalizationSettings from './AIPersonalizationSettings';
+import DeleteAccount from './DeleteAccount';
+import SettingsPage from './SettingsPage'; // full settings hub with nested pages
+import CreatePost from './CreatePost';
+import Subscriptions from './Subscriptions'; // Import the new Subscriptions component
 import Leaderboard from './Leaderboard';
 import Layout from './Layout';
+import LeftSidebar from './LeftSidebar';
+import RightSidebar from './RightSidebar';
+// removed accidental Go code block that was pasted into this TSX file
+import Debug from './Debug'; // Import the new debug component
+import { AuthProvider } from './AuthContext';
 
 function App() {
-  // A real app would have a more sophisticated way to manage auth state
-  const token = localStorage.getItem('token');
-
   return (
-    <Router>
-      <div className="min-h-screen bg-gray-50 text-gray-800">
-        <header className="flex justify-between items-center px-8 py-4 bg-white shadow-sm sticky top-0 z-10">
-          <h1 className="text-2xl font-bold text-gray-900">
-            <Link to="/">SureBetSlips</Link>
-          </h1>
-          <nav className="flex items-center space-x-4 text-gray-700 font-medium">
-            <Link to="/" className="hover:text-blue-600">Home</Link>
-            <Link to="/leaderboard" className="hover:text-blue-600">Leaderboard</Link>
-          </nav>
-          {token ? (
-            <div className="flex items-center space-x-4">
-              <Link to="/profile" className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-100">Profile</Link>
-              <Link to="/post-betslip" className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">Post Bet</Link>
-            </div>
-          ) : (
-            <div className="flex space-x-3">
-              <Link to="/login" className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-100">Login</Link>
-              <Link to="/register" className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">Register</Link>
-            </div>
-          )}
-        </header>
-        <main className="p-8">
-           <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Layout><Login /></Layout>} />
-          <Route path="/register" element={<Layout><Register /></Layout>} />
-          <Route path="/profile" element={<Layout><Profile /></Layout>} />
-          <Route path="/leaderboard" element={<Layout><Leaderboard /></Layout>} />
-          <Route path="/post-betslip" element={<Layout><PostBetslip /></Layout>} />
-        </Routes>
-        </main>
-      </div>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <div className="bg-gray-100 min-h-screen">
+          <div className="container mx-auto flex justify-center">
+            <LeftSidebar />
+            <main className="w-full max-w-2xl border-x border-gray-200">
+              <Routes>
+                <Route path="/" element={<Layout><Home /></Layout>} />
+                <Route path="/login" element={<Layout><Login /></Layout>} />
+                <Route path="/register" element={<Layout><Register /></Layout>} />
+                <Route path="/profile" element={<Layout><Profile /></Layout>} />
+                <Route path="/users/:username" element={<Layout><UserProfile /></Layout>} />
+                <Route path="/leaderboard" element={<Leaderboard />} />
+                <Route path="/post-betslip" element={<CreatePost />} />
+                <Route path="/ai-punters" element={<Layout><div>AI Punters page coming soon!</div></Layout>} />
+                <Route path="/subscriptions" element={<Layout><Subscriptions /></Layout>} />
+                <Route path="/settings" element={<Layout><SettingsPage /></Layout>}>
+                  <Route index element={<div className="p-8">Select a section from the Settings menu.</div>} />
+                  <Route path="account" element={<AccountSettings />} />
+                  <Route path="profile" element={<ProfileSettings />} />
+                  <Route path="notifications" element={<NotificationsSettings />} />
+                  <Route path="privacy" element={<PrivacySettings />} />
+                  <Route path="feed" element={<FeedSettings />} />
+                  <Route path="security" element={<SecuritySettings />} />
+                  <Route path="pundit-tools" element={<PunditToolsSettings />} />
+                  <Route path="wallet" element={<WalletSettings />} />
+                  <Route path="ai-personalization" element={<AIPersonalizationSettings />} />
+                  <Route path="delete" element={<DeleteAccount />} />
+                </Route>
+              <Route path="/debug" element={<Layout><Debug /></Layout>} />
+              </Routes>
+            </main>
+            <RightSidebar />
+          </div>
+        </div>
+      </Router>
+    </AuthProvider>
   );
 }
 

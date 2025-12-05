@@ -1,75 +1,130 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { Link } from 'react-router-dom';
+import { useAuth } from "./AuthContext";
+
+const API_URL = 'http://localhost:8080';
+
+interface BetSlip {
+  id: number;
+  username: string;
+  avatar_url: string;
+  is_verified: boolean;
+  description: string;
+  image_url: string;
+  betslip_code: string;
+  platform: string;
+  status: 'won' | 'lost' | 'pending';
+  created_at: string;
+}
+
+
+
 
 const Home = () => {
+  const [betslips, setBetslips] = useState<BetSlip[]>([]);
+  const [error, setError] = useState('');
+  const { token, user } = useAuth();
+
+  useEffect(() => {
+    // Fetch the main betslip feed
+    const fetchBetslips = async () => {
+      try {
+        const response = await fetch(`${API_URL}/betslips`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch betslips');
+        }
+        const data = await response.json();
+        // Ensure that we always set an array, even if the API returns null
+        setBetslips(data || []);
+      } catch (err: any) {
+        setError(err.message);
+      }
+    };
+    fetchBetslips();
+  }, [token]);
+
+  const getStatusClass = (status: string) => {
+    switch (status) {
+      case 'won': return 'text-green-500';
+      case 'lost': return 'text-red-500';
+      default: return 'text-yellow-500';
+    }
+  };
+
   return (
-    <div>
-      {/* Hero Section */}
-      <section className="flex flex-col md:flex-row justify-between items-center py-16 max-w-6xl mx-auto">
-        <div className="max-w-lg mb-10 md:mb-0">
-          <h2 className="text-4xl font-extrabold mb-4 leading-snug">
-            Turn bet prediction into a{" "}
-            <span className="text-blue-600">community-driven</span> experience
-          </h2>
-          <p className="text-gray-600 mb-6 text-lg">
-            Post your bet slips, track outcomes, and build your reputation in the betting community.
-          </p>
-          <button className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">
-            Get Started
-          </button>
+    <div className="bg-white">
+      {/* Top Bar */}
+      <div className="sticky top-0 bg-white bg-opacity-80 backdrop-blur-md z-10">
+        <div className="p-4 border-b border-gray-200">
+          <h2 className="text-xl font-bold">Home</h2>
         </div>
-
-        {/* Profile Card */}
-        <div className="bg-white shadow-lg rounded-2xl p-6 text-center w-full md:w-80">
-          <div className="w-20 h-20 bg-gray-200 rounded-full mx-auto mb-4"></div>
-          <h3 className="text-xl font-semibold mb-2">John Doe</h3>
-          <div className="flex justify-center space-x-8 mb-4">
-            <div>
-              <p className="text-2xl font-bold">30</p>
-              <p className="text-gray-500 text-sm">Wins</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold">10</p>
-              <p className="text-gray-500 text-sm">Losses</p>
-            </div>
+        <div className="flex">
+          <div className="flex-1 text-center font-bold p-4 hover:bg-gray-200 cursor-pointer border-b-4 border-blue-500">
+            For You
           </div>
-          <a
-            href="/profile"
-            className="text-blue-600 hover:underline font-medium text-sm"
-          >
-            View Profile
-          </a>
-        </div>
-      </section>
-
-      {/* Recent Bet Slips */}
-      <section className="bg-white p-8 shadow-sm rounded-2xl max-w-5xl mx-auto mb-16">
-        <h3 className="text-2xl font-bold mb-6">Recent Bet Slips</h3>
-        <div className="space-y-4">
-          <div className="flex justify-between items-center border-b pb-3">
-            <div>
-              <p className="font-medium">Man City vs Arsenal</p>
-              <p className="text-sm text-gray-500">Posted by John Doe</p>
-            </div>
-            <span className="text-green-600 font-semibold">Won</span>
-          </div>
-
-          <div className="flex justify-between items-center border-b pb-3">
-            <div>
-              <p className="font-medium">Barcelona vs Madrid</p>
-              <p className="text-sm text-gray-500">Posted by Jane Doe</p>
-            </div>
-            <span className="text-red-600 font-semibold">Lost</span>
-          </div>
-
-          <div className="flex justify-between items-center border-b pb-3">
-            <div>
-              <p className="font-medium">Liverpool vs Chelsea</p>
-              <p className="text-sm text-gray-500">Posted by Alex</p>
-            </div>
-            <span className="text-yellow-500 font-semibold">Pending</span>
+          <div className="flex-1 text-center font-bold p-4 text-gray-500 hover:bg-gray-200 cursor-pointer">
+            Following
           </div>
         </div>
-      </section>
+      </div>
+
+      {/* "Create Post" box - only shows if logged in */}
+      {token && (
+        <div className="p-4 border-b border-gray-200 flex space-x-4">
+          {user?.avatar_url ? (
+            <img src={user.avatar_url} alt="Your profile" className="w-12 h-12 rounded-full object-cover" />
+          ) : (
+            <div className="w-12 h-12 bg-gray-300 rounded-full flex-shrink-0 flex items-center justify-center text-gray-600 font-bold text-xl">
+              {user?.username.charAt(0).toUpperCase()}
+            </div>
+          )}
+          <div className="flex-1">
+            <Link to="/post-betslip">
+              <div className="w-full p-3 bg-gray-100 rounded-full text-gray-500 cursor-pointer hover:bg-gray-200">
+                What's happening?
+              </div>
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* Betslip Feed */}
+      <div>
+        {error && <p className="p-4 text-red-500">{error}</p>}
+        {betslips.map((slip) => (
+          <div key={slip.id} className="p-4 border-b border-gray-200 flex space-x-4">
+            {/* Avatar */}
+            <Link to={`/users/${slip.username}`} className="flex-shrink-0">
+              <div>
+                {slip.avatar_url ? (
+                  <img src={slip.avatar_url} alt={`${slip.username}'s avatar`} className="w-12 h-12 rounded-full object-cover hover:opacity-90 transition-opacity" />
+                ) : (
+                  <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center text-gray-600 font-bold text-xl hover:bg-gray-400 transition-colors">
+                    {slip.username.charAt(0).toUpperCase()}
+                  </div>
+                )}
+              </div>
+            </Link>
+
+            {/* Content */}
+            <div className="flex-1">
+              <div className="flex items-center space-x-1">
+                <Link to={`/users/${slip.username}`} className="font-bold hover:underline">
+                  {slip.username}
+                </Link>
+                {slip.is_verified && <span title="Verified Punter" className="text-blue-500">✔️</span>}
+              </div>
+              {slip.description && <p className="my-2">{slip.description}</p>}
+              {slip.image_url && (
+                <img src={slip.image_url} alt="Bet slip" className="mt-2 rounded-2xl border border-gray-200 max-h-96" />
+              )}
+              <p className={`mt-2 text-sm font-semibold ${getStatusClass(slip.status)}`}>
+                Status: {slip.status.charAt(0).toUpperCase() + slip.status.slice(1)}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
