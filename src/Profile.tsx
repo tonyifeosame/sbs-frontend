@@ -1,47 +1,61 @@
-import React, { useState, useEffect } from 'react';
-
-const API_URL = 'http://localhost:8080';
+import React, { useRef, useState } from 'react';
+import { uploadAvatar } from './profileService';
+import { useAuth } from './AuthContext';
 
 const Profile = () => {
-  const [profile, setProfile] = useState<{ wins: number; losses: number } | null>(null);
+  const { user, isLoading, login } = useAuth(); // Using login to refresh context
+  // Local state for UI feedback during upload
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    const fetchProfile = async () => {
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setError('');
+    setMessage('Uploading...');
+
+    try {
+      const data = await uploadAvatar(file);
+      setMessage(data.message);
+      // To refresh the user data across the app, we can re-trigger the fetch in AuthContext.
+      // A simple way is to call login again with the existing token.
       const token = localStorage.getItem('token');
-      if (!token) {
-        setError('You are not logged in.');
-        return;
-      }
+      if (token) login(token);
+    } catch (err: any) {
+      setError(err.message);
+      setMessage('');
+    }
+  };
 
-      try {
-        const response = await fetch(`${API_URL}/profile`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch profile data.');
-        }
-        const data = await response.json();
-        setProfile(data);
-      } catch (err: any) {
-        setError(err.message);
-      }
-    };
-
-    fetchProfile();
-  }, []);
-
-  if (error) return <p className="text-red-500 p-4">{error}</p>;
-  if (!profile) return <p className="p-4">Loading profile...</p>;
+  if (isLoading) return <p className="p-4">Loading profile...</p>;
+  if (!user) return <p className="p-4 text-red-500">You are not logged in.</p>;
 
   return (
     <div className="p-4">
-      <h2 className="text-2xl font-semibold mb-4">Your Profile</h2>
-      <p className="text-lg text-gray-700">Wins: <span className="font-bold text-green-600">{profile.wins}</span></p>
-      <p className="text-lg text-gray-700">Losses: <span className="font-bold text-red-600">{profile.losses}</span></p>
+      <div className="flex items-center mb-6">
+        {user.avatar_url ? (
+            <img src={user.avatar_url} alt="Your profile" className="w-24 h-24 rounded-full object-cover mr-6" />
+        ) : (
+            <div className="w-24 h-24 bg-gray-300 rounded-full flex items-center justify-center text-gray-600 font-bold text-4xl mr-6">
+                {user.username.charAt(0).toUpperCase()}
+            </div>
+        )}
+        <div>
+            <h2 className="text-3xl font-bold">{user.username}</h2>
+            <button onClick={handleUploadClick} className="mt-2 text-sm text-blue-600 hover:underline">Change Profile Picture</button>
+            <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
+        </div>
+      </div>
+      {message && <p className="text-green-500 mb-4">{message}</p>}
+      {error && <p className="text-red-500 mb-4">{error}</p>}
+      <p className="text-lg text-gray-700">Wins: <span className="font-bold text-green-600">{user.wins ?? 0}</span></p>
+      <p className="text-lg text-gray-700">Losses: <span className="font-bold text-red-600">{user.losses ?? 0}</span></p>
     </div>
   );
 };
